@@ -1,0 +1,32 @@
+*
+  box-sizing border-box
+
+#input
+#output
+  width 50%
+  float left
+  padding 15px
+
+#input
+  [name="params"]
+    width 100%
+    min-height 200px
+
+@media print
+  #input
+    display none
+
+  #output
+    position absolute
+    width 100%
+    top 0
+    left 0
+    right 0
+    z-index 23
+
+.page-break
+  visibility hidden
+  page-break-after always
+  height 1px
+  position relative
+  min-height 0
