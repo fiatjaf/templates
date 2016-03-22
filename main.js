@@ -1,5 +1,4 @@
 import Cycle from '@cycle/core'
-import marked from 'marked'
 import Rx from 'rx'
 import yaml from 'js-yaml'
 
@@ -35,9 +34,8 @@ const templateDriver = function () {
     .startWith('# alô')
 }
 
-const HTMLDriver = function (md$) {
-  md$.subscribe(md => {
-    let html = marked(md)
+const HTMLDriver = function (html$) {
+  html$.subscribe(html => {
     let el = document.querySelector('#output')
     if (el.innerHTML === html) return
     el.innerHTML = html
