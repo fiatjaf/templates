@@ -5,8 +5,38 @@
 <link rel=stylesheet href="style.css">
 
 <div id=input>
-  <textarea placeholder="Parameters" name=params></textarea>
-  <textarea placeholder="Template" name=template></textarea>
+  Press Ctrl+P to print the output.
+  <textarea placeholder="Parameters, use the YAML format" name=params>from: Julie Lights
+price: 32
+loop:
+  - date: 3/14/2012
+    quantity: 2
+  - date: 4/27/2013
+    quantity: 1
+  - date: 7/1/2017
+    quantity: 13
+    paidby: bitcoin</textarea>
+  <textarea placeholder="Template, use markdown with {{ variables }}" name=template>
+## Receipt
+
+**No.**: {{ loop.index }}
+**Date**: {{ date }}
+
+* **Received from**: {{ from }}
+* **For payment of**: {{ quantity }} units of 100W incandescent light bulb
+* **Amount**: $ {{ quantity * price }}
+
+Paid by {{ paidby or 'cash' }}.
+
+**Received by**: Alfred Telecom Inc.
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+Alfred, from Alfred Telecom
+
+---
+
+  </textarea>
 </div>
 <div id=output></div>
 

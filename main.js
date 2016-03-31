@@ -4,11 +4,6 @@ import yaml from 'js-yaml'
 
 const editor = new window.SimpleMDE({
   element: document.querySelector('textarea[name="template"]'),
-  autosave: {
-    enabled: true,
-    delay: 4000,
-    uniqueId: 'template'
-  },
   indentWithTabs: false,
   spellChecker: false
 })
@@ -31,7 +26,7 @@ const paramsDriver = function () {
 const templateDriver = function () {
   return Rx.Observable.timer(1000, 1000)
     .map(() => editor.value())
-    .startWith('# alô')
+    .startWith('')
 }
 
 const HTMLDriver = function (html$) {

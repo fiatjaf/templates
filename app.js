@@ -4,21 +4,21 @@ import xtend from 'xtend'
 
 export default function app ({OUTPUT, params$, template$}) {
   let html$ = Rx.Observable.combineLatest(params$, template$, (params = {}, template) => {
-    var range = [{}]
-    if (params.range) {
-      range = params.range
+    var loopvalues = [{}]
+    if (params.loop) {
+      loopvalues = params.loop
     }
 
     try {
-      return '<div class=unit>' + range.map((values, i) => {
+      return '<div class=unit>' + loopvalues.map((values, i) => {
         let data = xtend(params, values, {
           loop: {
             index: i + 1,
             index0: i,
-            revindex: range.length - i,
-            revindex0: range.length - i - 1,
+            revindex: loopvalues.length - i,
+            revindex0: loopvalues.length - i - 1,
             first: i === 0,
-            last: i === (range.length - 1),
+            last: i === (loopvalues.length - 1),
             cycle: function () {
               return arguments[i % arguments.length]
             },

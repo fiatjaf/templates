@@ -33,7 +33,7 @@
   "scripts": {
     "style": "stylus style.styl -o dist/style.css",
     "browserify": "mkdirp dist && browserify main.js -t babelify --outfile dist/main.js",
-    "live": "ls | grep -v 'swp' | entr fish -c 'browserifyinc main.js -t babelify --outfile dist/main.js; and echo \"done!\"'",
+    "live": "ls | grep -v 'swp' | entr fish -c 'browserifyinc main.js -t babelify --outfile dist/main.js; and cp index.html dist/; and echo \"done!\"'",
     "server": "instant -p 5000 --delay 1000",
     "build": "npm run browserify && npm run style && cp index.html dist/",
     "deploy": "npm run build && surge -p ./dist -d templates.alhur.es"
