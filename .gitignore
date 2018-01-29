@@ -1,6 +1,7 @@
 *.swo
 *.swp
 npm-debug.log
-dist
+dist/
 node_modules
 browserify-cache.json
+elm-stuff
