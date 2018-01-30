@@ -4,6 +4,8 @@ const YAML = require('yaml-js')
 const nunjucks = require('nunjucks')
 const debounce = require('debounce')
 const xtend = require('xtend')
+const RemoteStorage = require('remotestoragejs')
+const Widget = require('remotestorage-widget')
 const markdown = require('markdown-it')({
   html: true,
   linkify: false,
@@ -50,6 +52,74 @@ loop:
 let app = Elm.Main.fullscreen({
   initial_data: data,
   initial_template: template
+})
+
+let rs = new RemoteStorage({logging: false})
+rs.access.claim('templates', 'rw')
+rs.caching.enable('/templates/markdown/')
+rs.caching.enable('/templates/data/yaml/')
+
+rs.on('connected', () => {
+  app.ports.logged.send(true)
+  listData()
+  listTemplates()
+})
+rs.on('disconnected', () => {
+  app.ports.logged.send(false)
+  app.ports.gottemplatelist.send([])
+  app.ports.gotdatalist.send([])
+})
+
+let widget = new Widget(rs, {
+  leaveOpen: false,
+  autoCloseAfter: 4000
+})
+setTimeout(() => {
+  widget.attach('rs-widget')
+}, 1000)
+
+let md = rs.scope('/templates/markdown/')
+let dt = rs.scope('/templates/data/yaml/')
+
+function listTemplates () {
+  md.getListing('')
+    .then(listing => {
+      app.ports.gottemplatelist.send(
+        Object.keys(listing)
+          .filter(name => name.slice(-1)[0] !== '/')
+      )
+    })
+}
+
+function listData () {
+  md.getListing('')
+    .then(listing => {
+      app.ports.gotdatalist.send(
+        Object.keys(listing)
+          .filter(name => name.slice(-1)[0] !== '/')
+      )
+    })
+}
+
+function fetchTemplate (name) {
+  md.getObject(name)
+    .then(template => {
+      app.ports.gottemplate.send((name, template))
+    })
+}
+
+function fetchData (name) {
+  dt.getObject(name)
+    .then(data => {
+      app.ports.gotdata.send((name, data))
+    })
+}
+
+app.ports.gettemplate.subscribe(fetchTemplate)
+app.ports.getdata.subscribe(fetchData)
+
+app.ports.save.subscribe((name, doc) => {
+  // save
 })
 
 app.ports.changed.subscribe(debounce(([template, data]) => {

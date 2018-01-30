@@ -1,0 +1,58 @@
+* {
+  box-sizing: border-box;
+}
+
+@media screen and (max-width: 1023px) {
+  .navbar {
+    display: flex;
+    flex-shrink: 2;
+    justify-content: space-between;
+  }
+
+  .navbar-menu {
+    background-color: inherit;
+    box-shadow: none;
+    padding: 0;
+    display: flex;
+  }
+}
+
+.rs-widget {}
+.rs-state-sign-in {
+  position: absolute;
+  right: 0;
+  top: 0;
+  min-width: 400px;
+}
+
+.container {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+textarea {
+  min-height: 40vh !important;
+  margin: 10px;
+  font-family: monospace;
+  font-size: 1.1em;
+}
+
+@media print {
+  #input,
+  .navbar,
+  .footer {
+    display: none;
+  }
+  #output {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 23;
+  }
+}
+
+.unit {
+  page-break-inside: avoid;
+}
