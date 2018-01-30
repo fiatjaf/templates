@@ -3,6 +3,7 @@
 const YAML = require('yaml-js')
 const nunjucks = require('nunjucks')
 const debounce = require('debounce')
+const notie = require('notie')
 const xtend = require('xtend')
 const RemoteStorage = require('remotestoragejs')
 const Widget = require('remotestorage-widget')
@@ -57,7 +58,7 @@ let app = Elm.Main.fullscreen({
 let rs = new RemoteStorage({logging: false})
 rs.access.claim('templates', 'rw')
 rs.caching.enable('/templates/markdown/')
-rs.caching.enable('/templates/data/yaml/')
+rs.caching.enable('/templates/data/')
 
 rs.on('connected', () => {
   app.ports.logged.send(true)
@@ -79,7 +80,7 @@ setTimeout(() => {
 }, 1000)
 
 let md = rs.scope('/templates/markdown/')
-let dt = rs.scope('/templates/data/yaml/')
+let dt = rs.scope('/templates/data/')
 
 function listTemplates () {
   md.getListing('')
@@ -87,39 +88,86 @@ function listTemplates () {
       app.ports.gottemplatelist.send(
         Object.keys(listing)
           .filter(name => name.slice(-1)[0] !== '/')
+          .map(name => name.split('.').slice(0, -1).join('.'))
       )
     })
 }
 
 function listData () {
-  md.getListing('')
+  dt.getListing('')
     .then(listing => {
       app.ports.gotdatalist.send(
         Object.keys(listing)
           .filter(name => name.slice(-1)[0] !== '/')
+          .map(name => name.split('.').slice(0, -1).join('.'))
       )
     })
 }
 
-function fetchTemplate (name) {
-  md.getObject(name)
-    .then(template => {
-      app.ports.gottemplate.send((name, template))
+app.ports.gettemplate.subscribe(name => {
+  md.getFile(name + '.md')
+    .then(res => {
+      app.ports.gottemplate.send([name, res.data])
     })
-}
-
-function fetchData (name) {
-  dt.getObject(name)
-    .then(data => {
-      app.ports.gotdata.send((name, data))
+    .catch(e => {
+      console.log('failed to load template', e)
+      notie.alert({
+        type: 'error',
+        text: `Failed to load '${name}'.`
+      })
     })
-}
+})
 
-app.ports.gettemplate.subscribe(fetchTemplate)
-app.ports.getdata.subscribe(fetchData)
+app.ports.getdata.subscribe(name => {
+  dt.getFile(name + '.yaml')
+    .then(res => {
+      app.ports.gotdata.send([name, res.data])
+    })
+    .catch(e => {
+      console.log('failed to load data', e)
+      notie.alert({
+        type: 'error',
+        text: `Failed to load '${name}'.`
+      })
+    })
+})
 
-app.ports.save.subscribe((name, doc) => {
-  // save
+app.ports.savetemplate.subscribe(([name, template]) => {
+  md.storeFile('text/njk+markdown', name + '.md', template)
+    .catch(e => {
+      console.log('error saving template', e)
+      notie.alert({
+        type: 'error',
+        text: `Error saving '${name}'.`
+      })
+    })
+    .then(() => {
+      app.ports.saved.send(true)
+      listTemplates()
+      notie.alert({
+        type: 'success',
+        text: `Saved '${name}'!`
+      })
+    })
+})
+
+app.ports.savedata.subscribe(([name, data]) => {
+  dt.storeFile('text/yaml', name + '.yaml', data)
+    .catch(e => {
+      console.log('error saving data', e)
+      notie.alert({
+        type: 'error',
+        text: `Error saving '${name}'.`
+      })
+    })
+    .then(() => {
+      app.ports.saved.send(true)
+      listData()
+      notie.alert({
+        type: 'success',
+        text: `Saved '${name}'!`
+      })
+    })
 })
 
 app.ports.changed.subscribe(debounce(([template, data]) => {
