@@ -13,7 +13,7 @@ const markdown = require('markdown-it')({
   typographer: true
 })
 
-let template = `[comment]: <> (a Markdown template goes here)
+const initial_template = `[comment]: <> (a Markdown template goes here)
 
 ## Receipt
 
@@ -36,7 +36,7 @@ Alfred, from Alfred Telecom
 
 
 `
-let data = ` # and here some data to be applied to the template
+const initial_data = ` # and here some data to be applied to the template
 
 from: Julie Lights
 price: 32
@@ -51,8 +51,8 @@ loop:
 `
 
 let app = Elm.Main.fullscreen({
-  initial_data: data,
-  initial_template: template
+  initial_template: localStorage.getItem('cached_template') || initial_template,
+  initial_data: localStorage.getItem('cached_data') || initial_data
 })
 
 let rs = new RemoteStorage({logging: false})
@@ -179,6 +179,10 @@ app.ports.changed.subscribe(debounce(([template, data]) => {
   } catch (e) {
     console.log('failed to render', e)
   }
+
+  // save so this will be loaded on the next page reload
+  localStorage.setItem('cached_template', template)
+  localStorage.setItem('cached_data', data)
 }, 500))
 
 function render (params, template) {
