@@ -102,22 +102,7 @@ update msg model =
     GotData t -> ( { model | data = t, showing_lists = False }, Cmd.none )
     GotTemplate t -> ( { model | template = t, showing_lists = False }, Cmd.none )
     ShowList s -> ( { model | showing_lists = s }, Cmd.none )
-    PromptSave s ->
-      let
-        name_from_text (curr_name, text) = if trim curr_name == ""
-          then words text |> take 3 |> join " "
-          else trim curr_name
-        template_name = name_from_text model.template
-        data_name = name_from_text model.data
-        x = Debug.log "prompt_save" s
-      in
-        ( { model
-            | showing_save = s
-            , template = (template_name, second model.template)
-            , data = (data_name, second model.data)
-          }
-        , Cmd.none
-        )
+    PromptSave s -> ( { model | showing_save = s } , Cmd.none )
     SaveTemplate -> (model, savetemplate model.template)
     SaveData -> (model, savedata model.data)
 
@@ -203,6 +188,7 @@ view model =
               , div [ class "navbar-item" ]
                 [ button
                   [ class "button is-success"
+                  , disabled <| not model.logged
                   , onClick (PromptSave True)
                   ] [ text "Save" ]
                 ]
