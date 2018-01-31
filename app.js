@@ -57,7 +57,7 @@ let app = Elm.Main.fullscreen({
 
 let rs = new RemoteStorage({logging: false})
 rs.access.claim('templates', 'rw')
-rs.caching.enable('/templates/markdown/')
+rs.caching.enable('/templates/template/')
 rs.caching.enable('/templates/data/')
 
 rs.on('connected', () => {
@@ -79,7 +79,7 @@ setTimeout(() => {
   widget.attach('rs-widget')
 }, 1000)
 
-let md = rs.scope('/templates/markdown/')
+let md = rs.scope('/templates/template/')
 let dt = rs.scope('/templates/data/')
 
 function listTemplates () {
