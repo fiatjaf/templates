@@ -27,6 +27,30 @@
   }
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+      to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+      to { opacity: 0; }
+}
+
+.navbar-brand {}
+  .navbar-brand .primary { font-size: 20px; }
+  .navbar-brand .secondary { display: none; }
+  .navbar-brand:hover .primary {
+    display: none;
+    animation: fadeOut 700ms;
+  }
+  .navbar-brand:hover .secondary {
+    display: inline;
+    animation: fadeIn 700ms;
+  }
+
+  .navbar-brand .button { margin-left: 4px; }
+
 .rs-widget {}
 .rs-state-sign-in {
   position: absolute;
@@ -51,12 +75,19 @@
     font-family: monospace;
   }
 
+.help {
+  text-align: justify;
+}
+  .help .title { margin-top: 1em; }
+  .help p { font-size: 1.5em; }
+
 @media print {
   .notie-container,
   #save,
   #input,
   .navbar,
-  .footer {
+  .footer,
+  .help {
     display: none;
   }
   #output {

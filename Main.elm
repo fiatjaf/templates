@@ -5,7 +5,7 @@ import Platform.Sub as Sub
 import Json.Encode
 import Array exposing (Array)
 import Tuple exposing (first, second)
-import String exposing (trim, words, join)
+import String exposing (trim, words, join, isEmpty)
 import List exposing (take)
 
 import Ports exposing (..)
@@ -25,12 +25,13 @@ main =
 type alias Model =
   { template : (String, String)
   , data : (String, String)
-  , rendered : String
+  , rendered : Maybe String
   , template_list : List String
   , data_list : List String
   , logged : Bool
   , showing_lists : Bool
   , showing_save : Bool
+  , showing_help : Bool
   }
 
 type alias Flags =
@@ -43,12 +44,13 @@ init : Flags -> (Model, Cmd Msg)
 init {initial_template, initial_data} =
   ( { template = ("", initial_template)
     , data = ("", initial_data)
-    , rendered = ""
+    , rendered = Nothing
     , template_list = []
     , data_list = []
     , logged = False
     , showing_lists = False
     , showing_save = False
+    , showing_help = False
     }
   , changed (initial_template, initial_data)
   )
@@ -72,6 +74,7 @@ type Msg
   | GotData (String, String)
   | GotTemplate (String, String)
   | ShowList Bool
+  | ShowHelp Bool
   | PromptSave Bool
   | SaveTemplate
   | SaveData
@@ -80,9 +83,15 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     SetTemplate t ->
-      ( { model | template = (first model.template, t) }
-      , changed (t, second model.data)
-      )
+      if not <| isEmpty <| trim t
+        then
+          ( { model | template = (first model.template, t) }
+          , changed (t, second model.data)
+          )
+        else
+          ( { model | template = (first model.template, t), rendered = Nothing }
+          , Cmd.none
+          )
     SetData d ->
       ( { model | data = (first model.data, d) }
       , changed (second model.template, d)
@@ -99,13 +108,14 @@ update msg model =
     LoadData d -> ( model, loaddata d )
     DeleteTemplate d -> ( model, deletetemplate d )
     DeleteData d -> ( model, deletedata d )
-    GotRendered r -> ( { model | rendered = r }, Cmd.none )
+    GotRendered r -> ( { model | rendered = Just r }, Cmd.none )
     GotLogged logged -> ( { model | logged = logged }, Cmd.none )
     GotDataList list -> ( { model | data_list = list }, Cmd.none )
     GotTemplateList list -> ( { model | template_list = list }, Cmd.none )
     GotData t -> ( { model | data = t, showing_lists = False }, Cmd.none )
     GotTemplate t -> ( { model | template = t, showing_lists = False }, Cmd.none )
     ShowList s -> ( { model | showing_lists = s }, Cmd.none )
+    ShowHelp s -> ( { model | showing_help = s }, Cmd.none )
     PromptSave s -> ( { model | showing_save = s } , Cmd.none )
     SaveTemplate -> (model, savetemplate model.template)
     SaveData -> (model, savedata model.data)
@@ -131,7 +141,14 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ div [ id "save", class <| "modal" ++ if model.showing_save then " is-active" else "" ]
+    [ div [ class <| "modal help" ++ if model.showing_help then " is-active" else "" ]
+      [ div [ class "modal-background", onClick (ShowHelp False) ] []
+      , div [ class "modal-content" ]
+        [ div [ class "box" ] [ help ]
+        ]
+      , div [ class "modal-close", onClick (ShowHelp False) ] []
+      ]
+    , div [ id "save", class <| "modal" ++ if model.showing_save then " is-active" else "" ]
       [ div [ class "modal-background", onClick (PromptSave False) ] []
       , div [ class "modal-content" ]
         [ div [ class "box" ]
@@ -173,10 +190,15 @@ view model =
             ]
           ]
         ]
+      , div [ class "modal-close", onClick (PromptSave False) ] []
       ]
     , nav [ class "navbar" ]
       [ div [ class "navbar-brand" ]
-        [ a [ class "navbar-item" ] [ text "templates.alhur.es" ]
+        [ div [ class "navbar-item" ]
+          [ span [ class "primary"] [ text "templates.alhur.es" ]
+          , span [ class "secondary" ] [ text "mix data with templates" ] 
+          , button [ class "button", onClick (ShowHelp True) ] [ text "?" ]
+          ]
         ]
       , div [ class "navbar-menu" ]
         [ div [ class "navbar-start" ]
@@ -217,7 +239,7 @@ view model =
             [ if not model.showing_lists
               then textarea
                 [ class "textarea"
-                , placeholder "Template, use markdown with {{ variables }}"
+                , placeholder "Template, use Markdown with {{ variables }}."
                 , name "template"
                 , onInput SetTemplate
                 ] [ text <| second model.template ]
@@ -231,7 +253,7 @@ view model =
             [ if not model.showing_lists
               then textarea
                 [ class "textarea"
-                , placeholder "Parameters, use the YAML format"
+                , placeholder "Data, use the YAML format."
                 , name "params"
                 , onInput SetData
                 ] [ text <| second model.data ]
@@ -242,11 +264,14 @@ view model =
                   text "No data blobs saved in your remoteStorage."
             ]
           ]
-        , div
-          [ class "column content"
-          , id "output"
-          , property "innerHTML" (Json.Encode.string model.rendered)
-          ] []
+        , case model.rendered of
+          Just "" -> div [ class "column help" ] [ help ]
+          Nothing -> div [ class "column help" ] [ help ]
+          Just html -> div
+            [ class "column content"
+            , id "output"
+            , property "innerHTML" (Json.Encode.string html)
+            ] []
         ]
       ]
     , footer [ class "footer" ]
@@ -272,5 +297,58 @@ loadable load delete name =
           [ a [ class "delete", onClick (delete name) ] [ text "" ]
           ]
         ]
+      ]
+    ]
+
+help : Html Msg
+help =
+  div []
+    [ h2 [ class "title is-2" ] [ text "How does everything work?" ]
+    , p []
+      [ text "You write a template in the upper left box and the data in the bottom left box. The data gets merged with the template and is shown on the right side. You can press Ctrl-P or tell your browser to print and only the output will be printed. The other parts of the page will dissappear."
+      ]
+    , h3 [ class "title is-3" ] [ text "Template fundamentals" ]
+    , p []
+      [ text "You can write the template in "
+      , a [ href "http://commonmark.org/help/", target "_blank" ] [ text "Markdown" ]
+      , text " or HTML, or you can mix both."
+      ]
+    , p []
+      [ text "To apply the variables defined in the data box (see below), use the "
+      , code [] [ text "{{ variable_name }}" ]
+      , text " syntax. For more advanced usage, you can check the "
+      , a [ href "https://mozilla.github.io/nunjucks/templating.html", target "_blank" ] [ text "Nunjucks" ]
+      , text " documentation, as that's the library used underneath. There are many pre-built filters, variable modifiers and other niceties you can use."
+      ]
+    , h3 [ class "title is-3" ] [ text "Data fundamentals" ]
+    , p []
+      [ text "Data is the place where you define the variables used in the templates. You can write it in the "
+      , a [ href "https://en.wikipedia.org/wiki/YAML", target "_blank" ] [ text "YAML" ]
+      , text "format, a superset of "
+      , a [ href "https://en.wikipedia.org/wiki/JSON", target "_blank" ] [ text "JSON" ]
+      , text " that's easier to write (basically you just do "
+      , code [] [ text "key: value" ]
+      , text " with your desired key and value for that key."
+      ]
+    , h2 [ class "title is-2" ] [ text "Repeating the template" ]
+    , p []
+      [ text "To facilitate the printing of multiple repeated documents with small changes in data between each one (for example, a more-or-less equal document that must be printed with the names of different people, or with multiple different dates), there's the special key "
+      , code [] [ text "loop" ]
+      , text "."
+      ]
+    , p []
+      [ code [] [ text "loop" ]
+      , text " expects a list of data groups consisting of keys and values. For each group on that list, a repeated version of the template will be generated. You write a single template and it can access, through the "
+      , code [] [ text "{{ varname }}" ]
+      , text " syntax, both the top-level data and the loop data."
+      ]
+    , p []
+      [ text "Loops operate much like the "
+      , a [ href "https://mozilla.github.io/nunjucks/templating.html#for", target "_blank" ]
+        [ code [] [ text "for" ]
+        ]
+      , text " context of Nunjucks and has access to its special "
+      , code [] [ text "loop." ]
+      , text " variables too."
       ]
     ]

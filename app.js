@@ -223,7 +223,7 @@ app.ports.savedata.subscribe(([name, data]) => {
 })
 
 app.ports.changed.subscribe(debounce(([template, data]) => {
-  let params = YAML.load(data)
+  let params = YAML.load(data || '{}')
 
   try {
     let html = render(params, template)
