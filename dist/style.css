@@ -46,7 +46,10 @@
   font-family: monospace;
   font-size: 1.1em;
 }
-  #input textarea { min-height: 40vh !important; }
+  #input textarea {
+    min-height: 40vh !important;
+    font-family: monospace;
+  }
 
 @media print {
   #save,
