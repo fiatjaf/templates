@@ -52,6 +52,7 @@
   }
 
 @media print {
+  .notie-container,
   #save,
   #input,
   .navbar,
