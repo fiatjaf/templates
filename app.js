@@ -88,6 +88,10 @@ function listTemplates () {
       app.ports.gottemplatelist.send(
         Object.keys(listing)
           .filter(name => name.slice(-1)[0] !== '/')
+          .filter(name =>
+            name.split('.').slice(-1)[0] === 'md' ||
+            name.split('.').slice(-1)[0] === 'html'
+          )
           .map(name => name.split('.').slice(0, -1).join('.'))
       )
     })
@@ -99,12 +103,16 @@ function listData () {
       app.ports.gotdatalist.send(
         Object.keys(listing)
           .filter(name => name.slice(-1)[0] !== '/')
+          .filter(name =>
+            name.split('.').slice(-1)[0] === 'yaml' ||
+            name.split('.').slice(-1)[0] === 'json'
+          )
           .map(name => name.split('.').slice(0, -1).join('.'))
       )
     })
 }
 
-app.ports.gettemplate.subscribe(name => {
+app.ports.loadtemplate.subscribe(name => {
   md.getFile(name + '.md')
     .then(res => {
       app.ports.gottemplate.send([name, res.data])
@@ -118,7 +126,7 @@ app.ports.gettemplate.subscribe(name => {
     })
 })
 
-app.ports.getdata.subscribe(name => {
+app.ports.loaddata.subscribe(name => {
   dt.getFile(name + '.yaml')
     .then(res => {
       app.ports.gotdata.send([name, res.data])
@@ -130,6 +138,50 @@ app.ports.getdata.subscribe(name => {
         text: `Failed to load '${name}'.`
       })
     })
+})
+
+app.ports.deletetemplate.subscribe(name => {
+  notie.confirm({
+    text: `Are you sure you want to delete the template '${name}'?`
+  }, () => {
+    md.remove(name + '.md')
+      .catch(e => {
+        console.log('error deleting template', e)
+        notie.alert({
+          type: 'error',
+          text: `Error deleting '${name}'.`
+        })
+      })
+      .then(() => {
+        listTemplates()
+        notie.alert({
+          type: 'success',
+          text: `Deleted '${name}'.`
+        })
+      })
+  })
+})
+
+app.ports.deletedata.subscribe(name => {
+  notie.confirm({
+    text: `Are you sure you want to delete the data '${name}'?`
+  }, () => {
+    dt.remove(name + '.yaml')
+      .catch(e => {
+        console.log('error deleting data', e)
+        notie.alert({
+          type: 'error',
+          text: `Error deleting '${name}'.`
+        })
+      })
+      .then(() => {
+        listData()
+        notie.alert({
+          type: 'success',
+          text: `Deleted '${name}'.`
+        })
+      })
+  })
 })
 
 app.ports.savetemplate.subscribe(([name, template]) => {

@@ -63,6 +63,8 @@ type Msg
   | SetDataName String
   | LoadTemplate String
   | LoadData String
+  | DeleteTemplate String
+  | DeleteData String
   | GotRendered String
   | GotLogged Bool
   | GotDataList (List String)
@@ -93,8 +95,10 @@ update msg model =
       ( { model | data = (n, second model.data) }
       , Cmd.none
       )
-    LoadTemplate d -> ( model, gettemplate d )
-    LoadData d -> ( model, getdata d )
+    LoadTemplate d -> ( model, loadtemplate d )
+    LoadData d -> ( model, loaddata d )
+    DeleteTemplate d -> ( model, deletetemplate d )
+    DeleteData d -> ( model, deletedata d )
     GotRendered r -> ( { model | rendered = r }, Cmd.none )
     GotLogged logged -> ( { model | logged = logged }, Cmd.none )
     GotDataList list -> ( { model | data_list = list }, Cmd.none )
@@ -219,8 +223,7 @@ view model =
                 ] [ text <| second model.template ]
               else if List.length model.template_list > 0
                 then
-                  let fn t = li [] [ a [ onClick (LoadTemplate t) ] [ text t ] ]
-                  in ul [] <| List.map fn model.template_list
+                  ul [] <| List.map (loadable LoadTemplate DeleteTemplate) model.template_list
                 else
                   text "No templates saved in your remoteStorage."
             ]
@@ -234,8 +237,7 @@ view model =
                 ] [ text <| second model.data ]
               else if List.length model.data_list > 0
                 then
-                  let fn t = li [] [ a [ onClick (LoadData t) ] [ text t ] ]
-                  in ul [] <| List.map fn model.data_list
+                  ul [] <| List.map (loadable LoadData DeleteData) model.data_list
                 else
                   text "No data blobs saved in your remoteStorage."
             ]
@@ -254,6 +256,21 @@ view model =
         , text " and sources published on "
         , a [ href "https://github.com/fiatjaf/templates", target "_blank" ] [ text "GitHub" ] 
         , text "."
+        ]
+      ]
+    ]
+
+loadable : (String -> Msg) -> (String -> Msg) -> String -> Html Msg
+loadable load delete name =
+  li []
+    [ div [ class "level" ]
+      [ div [ class "level-left" ] 
+        [ div [ class "level-item" ] [ a [ onClick (load name) ] [ text name ] ]
+        ]
+      , div [ class "level-right" ]
+        [ div [ class "level-item" ]
+          [ a [ class "delete", onClick (delete name) ] [ text "" ]
+          ]
         ]
       ]
     ]
